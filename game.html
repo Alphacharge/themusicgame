@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Game</title>
+    <style>
+        /* Body background using local GIF */
+        body {
+            background-image: url('giphy.webp'); /* Local file in the same folder */
+            background-size: cover;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Header styling */
+        h1 {
+            text-align: center;
+            color: #FFD700; /* Yellow color for the heading */
+            margin-top: 20px;
+            font-size: 3em;
+        }
+
+        /* Style buttons */
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Button clicked feedback color */
+        .btn.clicked {
+            background-color: #32CD32; /* Grass Green color */
+        }
+
+        /* Style the links */
+        .link {
+            font-size: 16px;
+            margin-right: 10px;
+            text-decoration: none;
+            color: #FFD700; /* Yellow color for the links */
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        /* Layout styling for table */
+        table {
+            width: 80%;
+            margin: 50px auto;
+            text-align: center;
+            font-size: 18px;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: transparent;
+            padding: 10px;
+            color: #FFD700; /* Yellow color for headings */
+            font-weight: bold; /* Bold headings */
+        }
+
+        td {
+            padding: 10px;
+            background-color: transparent;
+        }
+
+        /* Set iframe player behind the background */
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px; /* Reduced to 1x1 */
+            height: 1px; /* Reduced to 1x1 */
+            z-index: -1; /* Send it behind the background */
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+    let player;
+
+    // Initialize the YouTube iframe player
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('youtubePlayer', {
+            videoId: 'UnmArY0r3co', // Default video ID (can be overridden later)
+            events: {
+                onReady: onPlayerReady
+            }
+        });
+    }
+
+    function onPlayerReady() {
+        console.log('Player is ready');
+    }
+
+    // Modify playVideo function to extract the video ID from the link
+    function playVideo(videoUrl, startTime, duration, btn) {
+        // Extract YouTube video ID from the URL
+        const videoId = getYouTubeVideoId(videoUrl);
+        
+        if (videoId) {
+            player.loadVideoById(videoId); // Load the video dynamically
+            player.seekTo(startTime); // Start the video from the specified time
+            player.playVideo(); // Play the video
+
+            // Add clicked class for button feedback (green)
+            btn.classList.add('clicked');
+
+            // Stop the video after the specified duration
+            setTimeout(() => {
+                player.pauseVideo();
+            }, duration * 1000); // Convert to milliseconds
+        } else {
+            console.error('Invalid YouTube URL');
+        }
+    }
+
+    // Helper function to extract YouTube video ID from the URL
+    function getYouTubeVideoId(url) {
+        const regex = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^\/\n\s]+\/\S+\/|\S*?[?&]v=|(?:v\/|e\/|u\/\w\/)\/|embed\/))([\w-]{11})/;
+        const matches = url.match(regex);
+        return matches ? matches[1] : null;
+    }
+
+    // Fetch the video data from JSON file
+    async function loadVideos() {
+        try {
+            const response = await fetch('videos.json');
+            const videos = await response.json();
+            const tableBody = document.querySelector('tbody');
+
+            // Create table rows for each video
+            videos.forEach(video => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><a class="link" href="${video.url}" target="_blank">${video.url}</a></td>
+                    <td><button class="btn" onclick="playVideo('${video.url}', 10, 2, this)">2s</button></td>
+                    <td><button class="btn" onclick="playVideo('${video.url}', 30, 5, this)">5s</button></td>
+                    <td><button class="btn" onclick="playVideo('${video.url}', 60, 10, this)">10s</button></td>
+                    <td><button class="btn" onclick="playVideo('${video.url}', 90, 30, this)">30s</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error loading videos:', error);
+        }
+    }
+
+    // Load videos when the page is ready
+    window.onload = loadVideos;
+</script>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+    <!-- Heading "The Music Game" -->
+    <h1>The Music Game</h1>
+
+    <!-- Table for Links and Buttons -->
+    <table>
+        <thead>
+            <tr>
+                <th>Video</th>
+                <th>4 Points</th>
+                <th>3 Points</th>
+                <th>2 Points</th>
+                <th>1 Point</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic content will be loaded here -->
+        </tbody>
+    </table>
+
+    <!-- YouTube Player -->
+    <div id="youtubePlayer"></div>
+</body>
+</html>
