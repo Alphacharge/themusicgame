@@ -9,12 +9,12 @@
         body {
             background-image: url('giphy.webp'); /* Local file in the same folder */
             background-size: cover;
-            height: 100vh;
+            height: 100%;
             padding: 0;
             margin: 0;
             font-family: Arial, sans-serif;
             color: white;
-            overflow: hidden;
+            overflow: auto; /* Allow scrolling */
             position: relative;
         }
 
@@ -35,7 +35,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin: 0 10px;
+            margin: 5px;
         }
 
         .btn:hover {
@@ -66,6 +66,7 @@
             text-align: center;
             font-size: 18px;
             border-collapse: collapse;
+            overflow: auto; /* Ensure scrollable */
         }
 
         th {
@@ -97,13 +98,14 @@
             margin-top: 20px;
         }
     </style>
-    <script>
+<script>
     let player;
+    let currentVideoId = ''; // To track the currently loaded video ID
 
     // Initialize the YouTube iframe player
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('youtubePlayer', {
-            videoId: 'UnmArY0r3co', // Default video ID (can be overridden later)
+            videoId: 'UnmArY0r3co', // Default video ID
             events: {
                 onReady: onPlayerReady
             }
@@ -119,46 +121,55 @@
         // Extract YouTube video ID from the URL
         const videoId = getYouTubeVideoId(videoUrl);
         
-        if (videoId) {
-            player.loadVideoById(videoId); // Load the video dynamically
-            player.seekTo(startTime); // Start the video from the specified time
-            player.playVideo(); // Play the video
-
-            // Add clicked class for button feedback (green)
-            btn.classList.add('clicked');
-
-            // Stop the video after the specified duration
-            setTimeout(() => {
-                player.pauseVideo();
-            }, duration * 1000); // Convert to milliseconds
+        // If the video ID is different from the current one, load the new video
+        if (videoId !== currentVideoId) {
+            currentVideoId = videoId;
+            player.loadVideoById(videoId, startTime);
         } else {
-            console.error('Invalid YouTube URL');
+            // If the video is the same, just seek to the new start time
+            player.seekTo(startTime);
         }
+
+        // Play the video from the start time
+        player.playVideo();
+
+        // Add clicked class for button feedback (green)
+        btn.classList.add('clicked');
+
+        // Stop the video after the specified duration
+        setTimeout(() => {
+            player.pauseVideo();
+        }, duration * 1000); // Convert to milliseconds
     }
 
-    // Helper function to extract YouTube video ID from the URL
+    // Helper function to extract YouTube video ID from different YouTube URL formats
     function getYouTubeVideoId(url) {
-        const regex = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^\/\n\s]+\/\S+\/|\S*?[?&]v=|(?:v\/|e\/|u\/\w\/)\/|embed\/))([\w-]{11})/;
+        const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|\S*?[?&]v=|(?:v\/|e\/|u\/\w\/)\/|embed\/))([\w-]{11})|(?:youtu\.be\/)([\w-]{11})/;
         const matches = url.match(regex);
-        return matches ? matches[1] : null;
+        if (matches) {
+            return matches[1] || matches[2]; // Return the matched video ID from either part of the regex
+        } else {
+            return null;
+        }
     }
 
     // Fetch the video data from JSON file
     async function loadVideos() {
         try {
             const response = await fetch('videos.json');
-            const videos = await response.json();
+            const videos = await response.json(); // Assuming it's just an array of URLs
             const tableBody = document.querySelector('tbody');
 
             // Create table rows for each video
-            videos.forEach(video => {
+            videos.forEach(videoUrl => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><a class="link" href="${video.url}" target="_blank">${video.url}</a></td>
-                    <td><button class="btn" onclick="playVideo('${video.url}', 10, 2, this)">2s</button></td>
-                    <td><button class="btn" onclick="playVideo('${video.url}', 30, 5, this)">5s</button></td>
-                    <td><button class="btn" onclick="playVideo('${video.url}', 60, 10, this)">10s</button></td>
-                    <td><button class="btn" onclick="playVideo('${video.url}', 90, 30, this)">30s</button></td>
+                    <td><a class="link" href="${videoUrl}" target="_blank">${videoUrl}</a></td>
+                    <!-- Adjust start time for each button -->
+                    <td><button class="btn" onclick="playVideo('${videoUrl}', 10, 2, this)">2s</button></td>
+                    <td><button class="btn" onclick="playVideo('${videoUrl}', 30, 5, this)">5s</button></td>
+                    <td><button class="btn" onclick="playVideo('${videoUrl}', 60, 10, this)">10s</button></td>
+                    <td><button class="btn" onclick="playVideo('${videoUrl}', 90, 30, this)">30s</button></td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -170,7 +181,8 @@
     // Load videos when the page is ready
     window.onload = loadVideos;
 </script>
-
+	
+	
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
